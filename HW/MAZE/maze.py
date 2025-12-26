@@ -8,27 +8,27 @@ class MazeGenerator:
         self.height = height if height % 2 != 0 else height + 1
         
         # 初始化迷宮：1 代表牆壁，0 代表路徑
-        # 先將所有地方填滿牆壁
+        # 先將所有地方填滿牆壁(將width*1後在將其成到高度上)
         self.maze = [[1 for _ in range(self.width)] for _ in range(self.height)]
 
-    def generate(self, start_x=1, start_y=1):
+    def generate(self, start_x=1, start_y=1): #設定[1][1]為挖掘起始點
         """開始生成迷宮"""
-        self.maze[start_y][start_x] = 0  # 設定起點為路徑
-        self._carve_passages(start_x, start_y)
-        
+        self.maze[start_y][start_x] = 0  #將起始點改為路徑
+        self._carve_passages(start_x, start_y) #呼叫挖掘
+
         # 設定入口和出口
-        self.maze[1][0] = 0             # 左上入口
+        self.maze[1][0] = 0  # 左上入口
         self.maze[self.height - 2][self.width - 1] = 0  # 右下出口
 
     def _carve_passages(self, cx, cy):
         """遞迴挖掘路徑"""
         # 定義四個方向 (dx, dy)
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        random.shuffle(directions)  # 隨機打亂方向
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)] #前後左右
+        random.shuffle(directions)  #隨機方向
 
-        for dx, dy in directions:
-            # nx, ny 是「隔壁的隔壁」的座標 (跨過一面牆)
-            nx, ny = cx + dx * 2, cy + dy * 2
+        for dx, dy in directions: #將隨機完的directions取出
+            # 跳格確認，避免牆壁被挖掉
+            nx, ny = cx + dx *2 , cy + dy *2
 
             # 檢查邊界，且確保目標點是牆壁（未被訪問過）
             if 0 <= nx < self.width and 0 <= ny < self.height and self.maze[ny][nx] == 1:
@@ -47,7 +47,6 @@ class MazeGenerator:
         # 移除座標軸刻度，讓圖更乾淨
         plt.xticks([])
         plt.yticks([])
-        plt.title(f"Random Maze ({self.width}x{self.height})", fontsize=15)
         plt.show()
 
 # --- 主程式 ---
