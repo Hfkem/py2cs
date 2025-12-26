@@ -3,18 +3,23 @@ import matplotlib.patches as patches
 import random
 
 class PortalMaze3D:
-    def __init__(self, width, height, depth, vertical_prob=0.15):
+    """
+    將 3D 空間視為多層 2D 平面的堆疊。
+    - 平面內的移動：使用傳統的遞迴回溯法 (Recursive Backtracker) 挖路。
+    - 垂直移動：不挖空，而是生成一對「傳送門 (Portal)」，標記相同的代碼 (如 A1)。
+    """
+    def __init__(self, width, height, depth, vertical_prob):
         self.width = width if width % 2 != 0 else width + 1
         self.height = height if height % 2 != 0 else height + 1
         self.depth = depth
-        self.vertical_prob = vertical_prob 
+        self.vertical_prob = vertical_prob #垂直移動的機率
         
         # 初始化 3D 迷宮
         self.maze = [[[1 for _ in range(self.width)] 
                       for _ in range(self.height)] 
                      for _ in range(self.depth)]
         
-        # 初始化每層的計數器 (Layer 0->A, Layer 1->B...)
+        # 初始化每層的計數器
         # 用來記錄每一組層級關係產生了多少個傳送門
         self.layer_counters = [0] * self.depth
 
@@ -24,9 +29,8 @@ class PortalMaze3D:
         lower_layer_idx = 0 -> 返回 "A1", "A2"... (代表連接 L1-L2)
         lower_layer_idx = 1 -> 返回 "B1", "B2"... (代表連接 L2-L3)
         """
-        # 轉換數字為字母: 0->A, 1->B, 2->C
+       # 將層數索引轉換為字母
         char_code = chr(ord('A') + lower_layer_idx)
-        
         # 該層計數器 +1
         self.layer_counters[lower_layer_idx] += 1
         count = self.layer_counters[lower_layer_idx]
@@ -34,14 +38,12 @@ class PortalMaze3D:
         return f"{char_code}{count}"
 
     def generate(self):
-        start_x, start_y, start_z = 1, 1, 0
+        start_x, start_y, start_z = 1, 1, 0 #挖掘起始點
         print(f"生成結構: {self.width}x{self.height}x{self.depth}")
         
-        self.maze[start_z][start_y][start_x] = 0
-        self._carve(start_x, start_y, start_z)
-        
-        # 設定出入口
-        self.maze[0][1][0] = 'IN'
+        self.maze[start_z][start_y][start_x] = 0 #起點設為路
+        self._carve(start_x, start_y, start_z)       
+        self.maze[0][1][0] = 'IN' # 設定入口
         
         # 尋找最後一層的出口
         found_exit = False
@@ -52,11 +54,9 @@ class PortalMaze3D:
                     found_exit = True
                     break
             if found_exit: break
-            
-        print("生成完畢，標籤已統一。")
 
     def _carve(self, cx, cy, cz):
-        # 定義移動：水平(步長2)、垂直(步長1)
+        # 定義移動：水平(步長2，要留牆壁)、垂直(步長1)
         moves = [
             ('H', 0, 1, 0), ('H', 0, -1, 0), 
             ('H', 1, 0, 0), ('H', -1, 0, 0),
@@ -74,27 +74,22 @@ class PortalMaze3D:
                         self._carve(nx, ny, nz)
             
             elif mode == 'V':
-                if random.random() > self.vertical_prob:
+                if random.random() > self.vertical_prob: #random判斷要不要忽略此垂直移動
                     continue
 
                 nx, ny, nz = cx, cy, cz + dz # 垂直直接堆疊
                 
-                if (0 <= nz < self.depth):
+                if (0 <= nz < self.depth): #檢查垂直移動的邊界
                     if self.maze[nz][ny][nx] == 1:
-                        # --- 核心修改邏輯 ---
-                        
                         # 1. 判斷誰是「底層」 (用來決定是 A系列還是 B系列)
-                        lower_layer = min(cz, nz)
-                        
+                        lower_layer = min(cz, nz)                       
                         # 2. 獲取唯一的標籤 (例如 "A5")
-                        tag = self._get_portal_tag(lower_layer)
-                        
+                        tag = self._get_portal_tag(lower_layer)                     
                         # 3. 將上下兩層的對應點都設為同一個標籤
                         self.maze[cz][cy][cx] = tag
                         self.maze[nz][ny][nx] = tag
                         
                         self._carve(nx, ny, nz)
-
     def _get_color(self, tag_str):
         """根據標籤的首字母決定顏色，方便視覺區分"""
         if tag_str == 'IN': return '#32CD32', 'white' # 綠色
@@ -150,10 +145,10 @@ class PortalMaze3D:
 
 # --- 執行 ---
 if __name__ == "__main__":
-    WIDTH = 15
-    HEIGHT = 15
-    DEPTH = 5
-    V_PROB = 0.2
+    WIDTH = 25
+    HEIGHT = 25
+    DEPTH = 4
+    V_PROB = 0.1
 
     gen = PortalMaze3D(WIDTH, HEIGHT, DEPTH, V_PROB)
     gen.generate()
