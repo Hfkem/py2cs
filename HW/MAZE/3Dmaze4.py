@@ -3,8 +3,8 @@ import matplotlib.patches as patches
 import random
 
 class ExcelStyleMaze:
-    def __init__(self, width, height, depth, vertical_prob=0.15):
-        # 確保寬高為奇數以配合迷宮算法
+    def __init__(self, width, height, depth, vertical_prob):
+        # 確保寬高為奇數
         self.width = width if width % 2 != 0 else width + 1
         self.height = height if height % 2 != 0 else height + 1
         self.depth = depth
@@ -15,7 +15,7 @@ class ExcelStyleMaze:
                       for _ in range(self.height)] 
                      for _ in range(self.depth)]
         
-        # 每層獨立的計數器 (Layer 0->A, Layer 1->B...)
+        # 每層獨立的計數器
         self.layer_counters = [0] * self.depth
 
     def _get_portal_tag(self, layer1, layer2):
@@ -46,27 +46,26 @@ class ExcelStyleMaze:
         self.maze[start_z][start_y][start_x] = 0
         
         # --- 使用迭代式生長樹演算法取代遞迴 ---
-        # active_cells 存放 (x, y, z)
+        # 存放已經挖開，且「四周可能還有牆壁可以挖」的格子座標
         active_cells = [(start_x, start_y, start_z)]
         
         while active_cells:
-            # === 關鍵修改點 ===
             # 決定從列表中選取哪一個格子來延伸
-            # 讓 random.random() < 0.5 決定：
-            # True: 選最後一個 (模擬遞迴，產生長路徑)
-            # False: 隨機選一個 (模擬 Prim 演算法，產生多分支)
+            # 讓 random.random() < 0.5 決定：避免太複雜/簡單
+            # True: 模擬遞迴
+            # False: 模擬 Prim 演算法 (隨機選)
             if random.random() < 0.5:
-                index = -1 
+                index = -1 # 模擬堆疊 (Stack)
             else:
-                index = random.randint(0, len(active_cells) - 1)
+                index = random.randint(0, len(active_cells) - 1) # 模擬隨機選取
             
             cx, cy, cz = active_cells[index]
             
-            # 尋找所有可能的鄰居 (水平 + 垂直)
+            # 定義方向
             moves = [('H', 0, 1), ('H', 0, -1), ('H', 1, 0), ('H', -1, 0), ('V', 0, 0)]
             random.shuffle(moves)
             
-            found_neighbor = False
+            found_neighbor = False # 標記這次迴圈是否成功挖路   
             
             for mode, dx, dy in moves:
                 if mode == 'H':
@@ -86,13 +85,13 @@ class ExcelStyleMaze:
                     if random.random() > self.vertical_prob:
                         continue
                         
-                    # 尋找其他樓層作為目標
+                    # 隨機挑選樓層
                     candidates = list(range(self.depth))
                     candidates.remove(cz)
                     random.shuffle(candidates)
                     
                     for target_z in candidates:
-                        # 只有當目標點是牆壁(未訪問)時才跳躍
+                        # 當目標點未訪問時才跳躍
                         if self.maze[target_z][cy][cx] == 1:
                             tag = self._get_portal_tag(cz, target_z)
                             
@@ -104,8 +103,8 @@ class ExcelStyleMaze:
                             active_cells.append((cx, cy, target_z))
                             found_neighbor = True
                             break
-                    
-                    if found_neighbor:
+
+                    if found_neighbor: 
                         break
 
             # 如果這個格子四周都已經沒有可以挖掘的地方，就從列表中移除
