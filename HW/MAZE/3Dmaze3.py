@@ -3,19 +3,19 @@ import matplotlib.patches as patches
 import random
 
 class ExcelStyleMaze:
-    def __init__(self, width, height, depth, vertical_prob=0.15):
-        # 確保寬高為奇數以配合迷宮算法
+    def __init__(self, width, height, depth, vertical_prob):
+        # 確保寬高為奇數
         self.width = width if width % 2 != 0 else width + 1
         self.height = height if height % 2 != 0 else height + 1
         self.depth = depth
-        self.vertical_prob = vertical_prob
+        self.vertical_prob = vertical_prob #機率
         
         # 初始化迷宮：1=牆, 0=路
         self.maze = [[[1 for _ in range(self.width)] 
                       for _ in range(self.height)] 
                      for _ in range(self.depth)]
         
-        # 每層獨立的計數器 (Layer 0->A, Layer 1->B...)
+        # 每層獨立的計數器
         self.layer_counters = [0] * self.depth
 
     def _get_portal_tag(self, layer1, layer2):
@@ -39,9 +39,8 @@ class ExcelStyleMaze:
         # 從第1層 (Index 0) 開始生成
         start_x, start_y, start_z = 1, 1, 0
         print(f"生成迷宮: {self.width}x{self.height}x{self.depth}")
-        print("模式: 跨層跳躍 + 字母顏色綁定 (Excel風格)")
         
-        self.maze[start_z][start_y][start_x] = 0
+        self.maze[start_z][start_y][start_x] = 0 # 將起始點改為路
         self._carve(start_x, start_y, start_z)
         
         # 設定固定入口
@@ -83,9 +82,9 @@ class ExcelStyleMaze:
                     continue
 
                 # 垂直跳躍：候選目標是「所有其他樓層」
-                candidates = list(range(self.depth))
-                candidates.remove(cz)
-                random.shuffle(candidates)
+                candidates = list(range(self.depth)) #列出樓層清單
+                candidates.remove(cz) #移除當前所在樓層
+                random.shuffle(candidates)  #打亂樓層
 
                 for target_z in candidates:
                     # 檢查目標點是否為牆 (未訪問)
@@ -100,10 +99,7 @@ class ExcelStyleMaze:
                         
                         # 3. 遞迴挖掘
                         self._carve(cx, cy, target_z)
-                        
-                        # 4. 成功建立一個通道後，跳出循環 (單格單通道原則)
                         break
-
     def _get_style(self, tag):
         """
         根據您的圖片風格設定顏色：
